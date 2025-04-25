@@ -215,16 +215,45 @@ export default class Game extends Phaser.Scene {
       bomb.setVelocity(Phaser.Math.Between(-200, 200), 20);
       bomb.allowGravity = false;
     }
+
+
+    //GAME OVER AGREGADO PARA LAS BOMBAS
+    if (this.gameOver && this.input.activePointer.isDown) {
+      // Reiniciar el juego, por ejemplo, recargando la escena
+      this.scene.restart();
+    }
+    
+
   }
 
+
   hitBomb(player, bomb) {
+    // Pausa la física
     this.physics.pause();
-
+  
+    // Cambia el color del jugador a rojo (como un efecto de "daño")
     this.player.setTint(0xff0000);
-
+  
+    // Reproduce la animación de "turn" para que el jugador se vea inmóvil
     this.player.anims.play("turn");
-
+  
+    // Marca que el juego ha terminado
     this.gameOver = true;
+  
+    // TEXTO DE GAME OVER AGREGADO
+    this.add.text(this.scale.width / 2, this.scale.height / 2, 'Game Over', {
+      fontSize: '48px',
+      fill: '#ff0000',
+      fontStyle: 'bold',
+    }).setOrigin(0.5, 0.5); // Centrado en la pantalla
+  
+    // Detener cualquier otro movimiento de los objetos, si es necesario
+    this.bombs.setVelocityX(0);
+    this.bombs.setVelocityY(0);
+  
+    // Detener las estrellas si están cayendo, por ejemplo
+    this.stars.setVelocityX(0);
+    this.stars.setVelocityY(0);
   }
 }
 
