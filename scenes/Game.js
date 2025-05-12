@@ -5,6 +5,13 @@ export default class Game extends Phaser.Scene {
     // key of the scene
     // the key will be used to start the scene by other scenes
     super("game");
+
+
+    //VARIABLES AGREGADAS PARA EL TEMPORIZADOR
+    this.tiempoRestante = 30; // segundos
+    this.textoTemporizador = null;
+    this.gameOver = false;
+
   }
 
   init() {
@@ -14,6 +21,8 @@ export default class Game extends Phaser.Scene {
     // data object param {}
   }
 
+
+  
   preload() {
     // load assets
     this.load.image("sky", "./public/assets/sky.png");
@@ -50,6 +59,48 @@ export default class Game extends Phaser.Scene {
       repeat: -1,
     });
 
+
+    //TEMPORIZADOR AGREGADO//
+   this.tiempoRestante = 30; // segundos
+   this.textoTemporizador = this.add.text(this.scale.width - 16, 16, 'Tiempo: ' + this.tiempoRestante, {
+    fontSize: '32px',
+    fill: '#fff',
+  }).setOrigin(1, 0); // Esto alinea el texto desde la derecha
+
+  this.actualizarTemporizador = () => {
+  if (this.gameOver) return;
+
+  this.tiempoRestante--;
+  this.textoTemporizador.setText('Tiempo: ' + this.tiempoRestante);
+
+  if (this.tiempoRestante <= 0) {
+    this.tiempoRestante = 0;
+    // Lógica para finalizar el juego
+    this.physics.pause();
+    this.player.setTint(0xff0000);
+    this.player.anims.play('turn');
+    this.gameOver = true;
+
+    // Mostrar el mensaje de Game Over
+      this.add.text(this.scale.width / 2, this.scale.height / 2, 'Game Over', {
+      fontSize: '48px',
+      fill: '#ff0000',
+      fontStyle: 'bold'
+    }).setOrigin(0.5, 0.5); // Centrado en la pantalla
+    }
+  };
+
+    // Evento que llama a actualizar Temporizador cada segundo
+      this.time.addEvent({
+      delay: 1000,
+      callback: this.actualizarTemporizador,
+      callbackScope: this,
+      loop: true
+      });
+
+
+    
+
     this.anims.create({
       key: "turn",
       frames: [{ key: "dude", frame: 4 }],
@@ -85,6 +136,7 @@ export default class Game extends Phaser.Scene {
       fill: "#000",
     });
 
+    //  Collide the player and the stars with the platforms
     this.physics.add.collider(this.player, this.platforms);
 
     this.physics.add.collider(this.stars, this.platforms);
@@ -104,9 +156,15 @@ export default class Game extends Phaser.Scene {
       null,
       this
     );
+
+
+    //TECLA R AGREGADA PARA REINICIAR EL JUEGO UNA VEZ QUE SE PIERDE
+    this.teclaReiniciar = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
+
   }
 
-  update() {
+  update() 
+  {
     // update game objects
     if (this.cursors.left.isDown) {
       this.player.setVelocityX(-160);
@@ -124,6 +182,13 @@ export default class Game extends Phaser.Scene {
 
     if (this.cursors.up.isDown && this.player.body.touching.down) {
       this.player.setVelocityY(-330);
+    }
+
+
+    //TECLA R AGREGADA PARA REINICIAR EL JUEGO UNA VEZ QUE SE PIERDE
+    if (this.gameOver && Phaser.Input.Keyboard.JustDown(this.teclaReiniciar)) {
+    this.scene.restart(); // Reinicia la escena actual
+
     }
   }
 
@@ -150,15 +215,46 @@ export default class Game extends Phaser.Scene {
       bomb.setVelocity(Phaser.Math.Between(-200, 200), 20);
       bomb.allowGravity = false;
     }
+
+
+    //GAME OVER AGREGADO PARA LAS BOMBAS
+    if (this.gameOver && this.input.activePointer.isDown) {
+      // Reiniciar el juego, por ejemplo, recargando la escena
+      this.scene.restart();
+    }
+    
+
   }
+
 
   hitBomb(player, bomb) {
+    // Pausa la física
     this.physics.pause();
-
+  
+    // Cambia el color del jugador a rojo (como un efecto de "daño")
     this.player.setTint(0xff0000);
-
+  
+    // Reproduce la animación de "turn" para que el jugador se vea inmóvil
     this.player.anims.play("turn");
-
+  
+    // Marca que el juego ha terminado
     this.gameOver = true;
+  
+    // TEXTO DE GAME OVER AGREGADO
+    this.add.text(this.scale.width / 2, this.scale.height / 2, 'Game Over', {
+      fontSize: '48px',
+      fill: '#ff0000',
+      fontStyle: 'bold',
+    }).setOrigin(0.5, 0.5); // Centrado en la pantalla
+  
+    // Detener cualquier otro movimiento de los objetos, si es necesario
+    this.bombs.setVelocityX(0);
+    this.bombs.setVelocityY(0);
+  
+    // Detener las estrellas si están cayendo, por ejemplo
+    this.stars.setVelocityX(0);
+    this.stars.setVelocityY(0);
   }
 }
+
+
